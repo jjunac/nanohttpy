@@ -1,0 +1,19 @@
+[MESSAGES CONTROL]
+
+disable=
+    missing-docstring,
+    line-too-long,
+    too-few-public-methods,
+    trailing-newlines,
+
+
+[MISCELLANEOUS]
+
+    # List of note tags to take in consideration, separated by a comma.
+    # notes=FIXME,XXX,TODO
+    notes =
+
+[FORMAT]
+
+    # Good variable names which should always be accepted, separated by a comma
+    good-names=a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z
