@@ -3,12 +3,10 @@ from os import pathconf
 import re
 from typing import Callable, Any, Generator, Optional
 
-from nanohttpy.exceptions import MethodNotAllowedError, NanohttpyError, NotFoundError
+from nanohttpy.exceptions import MethodNotAllowedError, NanoHttpyError, NotFoundError
 from nanohttpy.logging import logger
-
-
-HandlerFunc = Callable[..., Any]
-Params = dict[str, Any]
+from nanohttpy.requests import Request
+from nanohttpy.types import HandlerFunc
 
 
 class RouteTree:
@@ -29,7 +27,7 @@ class RouteTree:
         self._children = children or {}
         self._wild_child = wild_child
 
-    def get_child(self, path: str, params: Params) -> Optional["RouteTree"]:
+    def get_child(self, path: str, params: dict[str, str]) -> Optional["RouteTree"]:
         res = self._children.get(path, None)
         # If we didn't find a specialized URL, we check if there is a wildcard
         if res is None and self._wild_child is not None:
@@ -74,9 +72,9 @@ def check_param(path_comp) -> bool:
     Check if a path component is a parameter. Throws if path_comp contains { or } in the middle or the string, or only opening/closing
     """
     if m := re.search(r"[{}]", path_comp[1:-1]):
-        raise NanohttpyError(f"Unexpected {m.group(0)}")
+        raise NanoHttpyError(f"Unexpected {m.group(0)}")
     if xor(path_comp[0] == "{", path_comp[-1] == "}"):
-        raise NanohttpyError("Unbalanced { } found")
+        raise NanoHttpyError("Unbalanced { } found")
     return path_comp[0] == "{"
 
 
@@ -93,13 +91,13 @@ class Router:
             if check_param(path_comp):
                 curr_route = curr_route.get_or_create_wild_child(path_comp)
                 if curr_route.path != path_comp:
-                    raise NanohttpyError(
+                    raise NanoHttpyError(
                         f"Found handler with different wildcard '{curr_route.path}' name for request '{method} {path}'"
                     )
             else:
                 curr_route = curr_route.get_or_create_child(path_comp)
         if curr_route.has_handler(method):
-            raise NanohttpyError(
+            raise NanoHttpyError(
                 f"A handler is already registered for request '{method} {path}'"
             )
         curr_route.set_handler(method, handler)
@@ -107,11 +105,12 @@ class Router:
             "Handler <%s> set for request '%s %s'", handler.__name__, method, path
         )
 
-    def get_handler(self, method: str, path: str, params: Params) -> HandlerFunc:
+    def get_handler(self, req: Request) -> HandlerFunc:
+        method, path = req.method, req.url.path
         logger.debug("Matching route for request '%s %s'...", method, path)
         curr_route = self._route_tree
         for path_comp in tokenize_path(path):
-            opt_route = curr_route.get_child(path_comp, params)
+            opt_route = curr_route.get_child(path_comp, req.path_parameters)
             if opt_route is None:
                 logger.debug("No match found for path component '%s'", path_comp)
                 raise NotFoundError()

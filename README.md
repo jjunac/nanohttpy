@@ -8,17 +8,30 @@ yet another web framework, with minimal memory footprint.
 
 :warning: _Work in progress, it doesn't support all the features of a web framework yet_
 
- - [ ] Handling of HTTP methods (only GET for now)
- - [ ] Differrent engines
-   - [ ] Asyncio
-   - [ ] Gevent
+**API**
+ - [X] Handling of HTTP methods
+   - [X] With FastAPI-like API: `@app.get(...)`, `@app.post(...)`
+   - [ ] With Flask-like API: `@app.route(...)`
+ - [X] Reply with different HTTP status code, headers, etc... 
  - [X] Automatic content type detection in response
    - [X] Plain text
    - [X] JSON
    - [ ] File
  - [X] Path parameters
- - [ ] Query parameters
- - [ ] Request body conversion (How ??)
+   - [ ] Make them available as function parameter
+   - [X] With FastAPI-like API: `"/hello/{name}"`
+   - [ ] With Flask-like API: `"/hello/<name>"`
+ - [X] Query parameters
+   - [ ] Make them available as function parameter
+ - [X] Body
+   - [ ] Automatic conversion to ... ?
+ - [ ] Plugins
+   - [ ] Jinja
+
+**Internals**
+ - [ ] Differrent engines
+   - [ ] Asyncio
+   - [ ] Gevent
 
 
 ## Installation

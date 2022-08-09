@@ -1,10 +1,62 @@
 import json
 from typing import Any, Optional, Type
+from nanohttpy.exceptions import NanoHttpyError
 
 from nanohttpy.logging import logger
+from nanohttpy.types import Decorator
 
 
 _HTTP_HEADER_ENCODING = "iso-8859-1"
+_RESPONSE_TYPES: dict[type, Type["Response"]] = {}
+
+
+def response_adapter(*adapted_types: type) -> Decorator[Type["Response"]]:
+    """Register a Response class as adapter of a type"""
+
+    def decorator_response(cls: Type["Response"]) -> Type["Response"]:
+        for t in adapted_types:
+            if issubclass(t, tuple):
+                raise NanoHttpyError(
+                    "Cannot adapt a tuple, as it is used for status_code binding etc..."
+                )
+            _RESPONSE_TYPES[t] = cls
+        return cls
+
+    return decorator_response
+
+
+def adapt_response(handler_result: Any) -> "Response":
+    """Try to detect the suitable type of response depending on type of content and wraps it"""
+    if isinstance(handler_result, Response):
+        logger.debug(
+            "Handler result is an instance of Response %s, returning as-is",
+            type(handler_result),
+        )
+        return handler_result
+
+    content = handler_result
+    # Check if the handler tried to return multiple values
+    if isinstance(content, tuple):
+        content = content[0]
+
+    res = _RESPONSE_TYPES.get(type(content), None)
+    if res is None:
+        res = Response
+        logger.debug(
+            "No Response found adapting %s, defaulting to Response", type(content)
+        )
+    else:
+        logger.debug(
+            "Content is %s, adapting with <%s.%s>",
+            type(content),
+            res.__module__,
+            res.__name__,
+        )
+
+    if isinstance(handler_result, tuple):
+        return res(*handler_result)
+    else:
+        return res(content)
 
 
 class Response:
@@ -60,45 +112,6 @@ class Response:
         if isinstance(content, bytes):
             return content
         return content.encode(self._charset)
-
-
-_RESPONSE_TYPES: dict[type, Type["Response"]] = {}
-
-
-def response_adapter(*adapted_types: type):
-    """Register a Response class as adapter of a type"""
-
-    def decorator_response(cls: Type["Response"]):
-        for t in adapted_types:
-            _RESPONSE_TYPES[t] = cls
-        return cls
-
-    return decorator_response
-
-
-def adapt_response(content: Any) -> Response:
-    """
-    Try to detect the suitable type of response depending on type of content and wraps it
-    """
-    if isinstance(content, Response):
-        logger.debug(
-            "Content is an instance of Response %s, returning as-is", type(content)
-        )
-        return content
-    res = _RESPONSE_TYPES.get(type(content), None)
-    if res is None:
-        res = Response
-        logger.debug(
-            "No Response found adapting %s, defaulting to Response", type(content)
-        )
-    else:
-        logger.debug(
-            "Content is %s, adapting with <%s.%s>",
-            type(content),
-            res.__module__,
-            res.__name__,
-        )
-    return res(content)
 
 
 @response_adapter(bytes, str)

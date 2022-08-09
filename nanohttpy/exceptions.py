@@ -1,11 +1,11 @@
 import http
 
 
-class NanohttpyError(RuntimeError):
+class NanoHttpyError(RuntimeError):
     pass
 
 
-class HttpError(NanohttpyError):
+class HttpError(NanoHttpyError):
     code: int
     description: str
 

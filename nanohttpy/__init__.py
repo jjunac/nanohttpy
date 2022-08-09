@@ -1,1 +1,1 @@
-from .applications import Nanohttpy
+from nanohttpy.applications import NanoHttpy
