@@ -1,5 +1,7 @@
 PY=python3
-PIP=python3 -m pip
+PIP=$(PY) -m pip
+PYTEST=$(PY) -m pytest
+PYTEST_FLAGS=--cov=nanohttpy -vv
 
 OS:=$(shell uname)
 
@@ -12,10 +14,10 @@ install: ## Install the developement dependencies
 	$(PIP) install -r requirements.txt
 
 test: ## Run the tests with coverage
-	$(PY) -m pytest --cov=nanohttpy
+	$(PYTEST) $(PYTEST_FLAGS)
 
 cover: ## Run the tests and open the html report in the browser
-	$(PY) -m pytest --cov=nanohttpy --cov-report=term --cov-report=html
+	$(PYTEST) $(PYTEST_FLAGS) --cov-report=term --cov-report=html
 ifeq ($(OS),Darwin)
 	open htmlcov/index.html
 endif

@@ -18,11 +18,11 @@ yet another web framework, with minimal memory footprint.
    - [X] JSON
    - [ ] File
  - [X] Path parameters
-   - [ ] Make them available as function parameter
+   - [X] Make them available as function parameter
    - [X] With FastAPI-like API: `"/hello/{name}"`
    - [ ] With Flask-like API: `"/hello/<name>"`
  - [X] Query parameters
-   - [ ] Make them available as function parameter
+   - [X] Make them available as function parameter
  - [X] Body
    - [ ] Automatic conversion to ... ?
  - [ ] Plugins

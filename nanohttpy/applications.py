@@ -1,13 +1,14 @@
 import functools
+from inspect import Parameter, signature
 import logging
 import traceback
-from typing import Callable, Tuple
+from typing import Any, Callable
 from nanohttpy.exceptions import HttpError
 from nanohttpy.requests import Request
 from nanohttpy.responses import Response, adapt_response
-from nanohttpy.routing import Router, HandlerFunc
+from nanohttpy.routing import Router
 from nanohttpy.logging import logger
-from nanohttpy.types import Decorator
+from nanohttpy.types import DecoratedHandlerFunc, HandlerFunc
 
 
 class NanoHttpy:
@@ -24,39 +25,52 @@ class NanoHttpy:
 
     def _generate_handler_decorator(
         self, http_method: str, path: str
-    ) -> Decorator[HandlerFunc]:
-        def handler(func: HandlerFunc) -> HandlerFunc:
+    ) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
+        def handler(func: HandlerFunc) -> DecoratedHandlerFunc:
             @functools.wraps(func)
-            def handler_wrapper(*args, **kwargs) -> HandlerFunc:
-                return func(*args, **kwargs)
+            def handler_wrapper(req: Request) -> HandlerFunc:
+                args: list[Any] = []
+                sig = signature(func)
+                expected_params = [p for p in sig.parameters.values() if p.kind == Parameter.POSITIONAL_OR_KEYWORD]
+                if len(expected_params) > 0:
+                    # The first arg is always the request
+                    args.append(req)
+                    # For the rest, we test first the path_param, then the query args
+                    for arg in expected_params[1:]:
+                        v = req.param(arg.name)
+                        if v is None:
+                            v = req.query(arg.name)
+                        args.append(v)
+                logger.debug("Calling handler with args %s", args)
+                return func(*args)
 
             self._router.add_route(http_method, path, handler_wrapper)
             return handler_wrapper
 
         return handler
 
-    def get(self, path: str) -> Decorator[HandlerFunc]:
+    def get(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         return self._generate_handler_decorator("GET", path)
 
-    def head(self, path: str) -> Decorator[HandlerFunc]:
+    def head(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         return self._generate_handler_decorator("HEAD", path)
 
-    def post(self, path: str) -> Decorator[HandlerFunc]:
+    def post(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         return self._generate_handler_decorator("POST", path)
 
-    def put(self, path: str) -> Decorator[HandlerFunc]:
+    def put(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         return self._generate_handler_decorator("PUT", path)
 
-    def delete(self, path: str) -> Decorator[HandlerFunc]:
+    def delete(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         return self._generate_handler_decorator("DELETE", path)
 
-    def connect(self, path: str) -> Decorator[HandlerFunc]:
+    def connect(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         return self._generate_handler_decorator("CONNECT", path)
 
-    def options(self, path: str) -> Decorator[HandlerFunc]:
+    def options(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         return self._generate_handler_decorator("OPTIONS", path)
 
-    def trace(self, path: str) -> Decorator[HandlerFunc]:
+    def trace(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         return self._generate_handler_decorator("TRACE", path)
 
     def lookup(self, req: Request) -> HandlerFunc:

@@ -3,7 +3,7 @@ import pytest
 from nanohttpy.http import URL, HTTPHeaders
 from nanohttpy.requests import Request
 
-from tests.utils import assert_raises
+from tests.testutils import assert_raises, make_request
 
 
 def relative_URL(path: str, query: str, fragment: str) -> URL:
@@ -45,7 +45,7 @@ def relative_URL(path: str, query: str, fragment: str) -> URL:
     ],
 )
 def test_Request_url_parsing(input_url: str, expected_url: URL, expected_args: dict):
-    req = Request("", input_url, "", HTTPHeaders(), b'')
+    req = make_request("", input_url)
     assert req.url == expected_url
     assert req.args == expected_args
 

@@ -1,19 +1,18 @@
 from dataclasses import dataclass, field
 from operator import xor
-from os import pathconf
 import re
-from typing import Callable, Any, Generator, Optional
+from typing import Generator, Optional
 
 from nanohttpy.exceptions import MethodNotAllowedError, NanoHttpyError, NotFoundError
 from nanohttpy.logging import logger
 from nanohttpy.requests import Request
-from nanohttpy.types import HandlerFunc
+from nanohttpy.types import DecoratedHandlerFunc
 
 
 @dataclass
 class RouteTree:
     path_param: Optional[str] = None
-    _method_handlers: dict[str, HandlerFunc] = field(default_factory=dict)
+    _method_handlers: dict[str, DecoratedHandlerFunc] = field(default_factory=dict)
     _children: dict[str, "RouteTree"] = field(default_factory=dict)
     _wild_child: Optional["RouteTree"] = None
 
@@ -44,10 +43,10 @@ class RouteTree:
     def has_handler(self, method: str) -> bool:
         return self._method_handlers.get(method, None) is not None
 
-    def get_handler(self, method: str) -> Optional[HandlerFunc]:
+    def get_handler(self, method: str) -> Optional[DecoratedHandlerFunc]:
         return self._method_handlers.get(method, None)
 
-    def set_handler(self, method: str, handler: HandlerFunc) -> None:
+    def set_handler(self, method: str, handler: DecoratedHandlerFunc) -> None:
         self._method_handlers[method] = handler
 
 
@@ -77,7 +76,7 @@ class Router:
     def __init__(self) -> None:
         self._route_tree = RouteTree("")
 
-    def add_route(self, method: str, path: str, handler: HandlerFunc):
+    def add_route(self, method: str, path: str, handler: DecoratedHandlerFunc):
         # TODO: pre-validation to avoid error handling in the middle + better error message ?
         curr_route = self._route_tree
         for path_comp in tokenize_path(path):
@@ -99,7 +98,7 @@ class Router:
             "Handler <%s> set for request '%s %s'", handler.__name__, method, path
         )
 
-    def get_handler(self, req: Request) -> HandlerFunc:
+    def get_handler(self, req: Request) -> DecoratedHandlerFunc:
         method, path = req.method, req.url.path
         logger.debug("Matching route for request '%s %s'...", method, path)
         curr_route = self._route_tree

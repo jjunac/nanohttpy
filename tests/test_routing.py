@@ -5,7 +5,7 @@ from nanohttpy.requests import Request
 from nanohttpy.routing import RouteTree, Router, check_param, tokenize_path
 from nanohttpy.exceptions import MethodNotAllowedError, NanoHttpyError, NotFoundError
 
-from tests.utils import assert_raises
+from tests.testutils import assert_raises, make_request
 
 
 @pytest.mark.parametrize(
@@ -183,29 +183,26 @@ def test_Router():
     def param1_param2():
         pass
 
-    def create_get_request(path: str) -> Request:
-        return Request("GET", path, "", HTTPHeaders(), b"")
-
-    assert_raises(MethodNotAllowedError, lambda: r.get_handler(create_get_request("/")))
-    assert_raises(NotFoundError, lambda: r.get_handler(create_get_request("/a")))
-    assert_raises(NotFoundError, lambda: r.get_handler(create_get_request("/whatever")))
+    assert_raises(MethodNotAllowedError, lambda: r.get_handler(make_request("GET", "/")))
+    assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/a")))
+    assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever")))
 
     r.add_route("GET", "/", root)
 
-    assert r.get_handler(create_get_request("/")) is not None
-    assert_raises(NotFoundError, lambda: r.get_handler(create_get_request("/a")))
-    assert_raises(NotFoundError, lambda: r.get_handler(create_get_request("/whatever")))
+    assert r.get_handler(make_request("GET", "/")) is not None
+    assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/a")))
+    assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever")))
 
     r.add_route("GET", "/a", a)
 
-    assert r.get_handler(create_get_request("/a")) is not None
-    assert_raises(NotFoundError, lambda: r.get_handler(create_get_request("/whatever")))
+    assert r.get_handler(make_request("GET", "/a")) is not None
+    assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever")))
 
     r.add_route("GET", "/{param1}", param1)
 
-    assert r.get_handler(create_get_request("/")) is not None
-    assert r.get_handler(create_get_request("/a")) is not None
-    assert r.get_handler(create_get_request("/whatever")) is not None
+    assert r.get_handler(make_request("GET", "/")) is not None
+    assert r.get_handler(make_request("GET", "/a")) is not None
+    assert r.get_handler(make_request("GET", "/whatever")) is not None
 
     r.add_route("GET", "/a/b", a_b)
     r.add_route("GET", "/a/b/{param3}", a_b_param3)
@@ -218,46 +215,46 @@ def test_Router():
     # Handler already registered with different path_param
     assert_raises(NanoHttpyError, lambda: r.add_route("GET", "/{different}", param1))
 
-    req = create_get_request("/")
+    req = make_request("GET", "/")
     assert r.get_handler(req).__name__ == "root"
     assert req.path_parameters == {}
-    req = create_get_request("")
+    req = make_request("GET", "")
     assert r.get_handler(req).__name__ == "root"
     assert req.path_parameters == {}
-    req = create_get_request("///")
+    req = make_request("GET", "///")
     assert r.get_handler(req).__name__ == "root"
     assert req.path_parameters == {}
 
-    req = create_get_request("/a")
+    req = make_request("GET", "/a")
     assert r.get_handler(req).__name__ == "a"
     assert req.path_parameters == {}
-    req = create_get_request("a")
+    req = make_request("GET", "a")
     assert r.get_handler(req).__name__ == "a"
     assert req.path_parameters == {}
-    req = create_get_request("/a/")
+    req = make_request("GET", "/a/")
     assert r.get_handler(req).__name__ == "a"
     assert req.path_parameters == {}
 
-    req = create_get_request("/something")
+    req = make_request("GET", "/something")
     assert r.get_handler(req).__name__ == "param1"
     assert req.path_parameters == {"param1": "something"}
 
-    req = create_get_request("/whatever")
+    req = make_request("GET", "/whatever")
     assert r.get_handler(req).__name__ == "param1"
     assert req.path_parameters == {"param1": "whatever"}
 
-    req = create_get_request("/a/b")
+    req = make_request("GET", "/a/b")
     assert r.get_handler(req).__name__ == "a_b"
     assert req.path_parameters == {}
 
-    req = create_get_request("/a/b/whatev")
+    req = make_request("GET", "/a/b/whatev")
     assert r.get_handler(req).__name__ == "a_b_param3"
     assert req.path_parameters == {"param3": "whatev"}
 
-    req = create_get_request("/key/b")
+    req = make_request("GET", "/key/b")
     assert r.get_handler(req).__name__ == "param1_b"
     assert req.path_parameters == {"param1": "key"}
 
-    req = create_get_request("/key/another-key")
+    req = make_request("GET", "/key/another-key")
     assert r.get_handler(req).__name__ == "param1_param2"
     assert req.path_parameters == {"param1": "key", "param2": "another-key"}
