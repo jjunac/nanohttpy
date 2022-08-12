@@ -19,7 +19,7 @@ class URL:
 
 
 _re_path_query_fragment = re.compile(
-    r"(/ [^#?]*) (?: \? ([^#]*) )? (?: \# (.*) )?", re.VERBOSE
+    r"(/? [^#?]*) (?: \? ([^#]*) )? (?: \# (.*) )?", re.VERBOSE
 )
 
 

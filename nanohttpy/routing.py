@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from operator import xor
 from os import pathconf
 import re
@@ -9,30 +10,23 @@ from nanohttpy.requests import Request
 from nanohttpy.types import HandlerFunc
 
 
+@dataclass
 class RouteTree:
-    path: str
-    _method_handlers: dict[str, HandlerFunc]
-    _children: dict[str, "RouteTree"]
-    _wild_child: Optional["RouteTree"]
-
-    def __init__(
-        self,
-        path: str,
-        method_handlers: dict[str, HandlerFunc] = None,
-        children: dict[str, "RouteTree"] = None,
-        wild_child: Optional["RouteTree"] = None,
-    ) -> None:
-        self.path = path
-        self._method_handlers = method_handlers or {}
-        self._children = children or {}
-        self._wild_child = wild_child
+    path_param: Optional[str] = None
+    _method_handlers: dict[str, HandlerFunc] = field(default_factory=dict)
+    _children: dict[str, "RouteTree"] = field(default_factory=dict)
+    _wild_child: Optional["RouteTree"] = None
 
     def get_child(self, path: str, params: dict[str, str]) -> Optional["RouteTree"]:
         res = self._children.get(path, None)
         # If we didn't find a specialized URL, we check if there is a wildcard
-        if res is None and self._wild_child is not None:
+        if (
+            res is None
+            and self._wild_child is not None
+            and self._wild_child.path_param is not None
+        ):
             # Assign the path param value
-            params[self._wild_child.path[1:-1]] = path
+            params[self._wild_child.path_param] = path
             res = self._wild_child
         return res
 
@@ -42,7 +36,7 @@ class RouteTree:
     def get_wild_child(self) -> Optional["RouteTree"]:
         return self._wild_child
 
-    def get_or_create_wild_child(self, path) -> "RouteTree":
+    def get_or_create_wild_child(self, path: str) -> "RouteTree":
         if self._wild_child is None:
             self._wild_child = RouteTree(path)
         return self._wild_child
@@ -77,7 +71,6 @@ def check_param(path_comp) -> bool:
         raise NanoHttpyError("Unbalanced { } found")
     return path_comp[0] == "{"
 
-
 class Router:
     _route_tree: RouteTree
 
@@ -89,10 +82,11 @@ class Router:
         curr_route = self._route_tree
         for path_comp in tokenize_path(path):
             if check_param(path_comp):
-                curr_route = curr_route.get_or_create_wild_child(path_comp)
-                if curr_route.path != path_comp:
+                param_name = path_comp[1:-1]
+                curr_route = curr_route.get_or_create_wild_child(param_name)
+                if curr_route.path_param != param_name:
                     raise NanoHttpyError(
-                        f"Found handler with different wildcard '{curr_route.path}' name for request '{method} {path}'"
+                        f"Found handler with different wildcard '{curr_route.path_param}' name for request '{method} {path}'"
                     )
             else:
                 curr_route = curr_route.get_or_create_child(path_comp)
