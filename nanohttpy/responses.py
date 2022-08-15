@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional, Type
+from typing import Any, Dict, Optional, Type
 from nanohttpy.exceptions import NanoHttpyError
 
 from nanohttpy.logging import logger
@@ -7,7 +7,7 @@ from nanohttpy.types import Decorator
 
 
 _HTTP_HEADER_ENCODING = "iso-8859-1"
-_RESPONSE_TYPES: dict[type, Type["Response"]] = {}
+_RESPONSE_TYPES: Dict[type, Type["Response"]] = {}
 
 
 def response_adapter(*adapted_types: type) -> Decorator[Type["Response"]]:
@@ -61,7 +61,7 @@ def adapt_response(handler_result: Any) -> "Response":
 
 class Response:
     status_code: int
-    headers: dict[str, str]
+    headers: Dict[str, str]
     encoded_body: bytes
     _media_type: Optional[str] = None
     _charset: str = "utf-8"
@@ -70,13 +70,13 @@ class Response:
         self,
         content: Any = None,
         status_code: int = 200,
-        headers: Optional[dict[str, str]] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         self.status_code = status_code
         self.encoded_body = self.render(content)
         self._init_headers(headers)
 
-    def _init_headers(self, headers: Optional[dict[str, str]]) -> None:
+    def _init_headers(self, headers: Optional[Dict[str, str]]) -> None:
         headers = headers or {}
 
         headers["Content-Length"] = str(len(self.encoded_body))
@@ -96,9 +96,9 @@ class Response:
         self.headers = headers
 
     @property
-    def encoded_headers(self) -> dict[bytes, bytes]:
+    def encoded_headers(self) -> Dict[bytes, bytes]:
         if not hasattr(self, "_encoded_headers"):
-            self._encoded_headers: dict[  # pylint: disable=attribute-defined-outside-init
+            self._encoded_headers: Dict[  # pylint: disable=attribute-defined-outside-init
                 bytes, bytes
             ] = {
                 k.encode(_HTTP_HEADER_ENCODING): v.encode(_HTTP_HEADER_ENCODING)
@@ -125,6 +125,8 @@ class JSONResponse(Response):
 
     def render(self, content: Any) -> bytes:
         # Since we encoded in utf-8, no need to worry about ensure_ascii
-        return json.dumps(content, ensure_ascii=False, allow_nan=False).encode(
-            self._charset
+        return json.dumps(
+            content, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+        ).encode(
+            self._charset,
         )

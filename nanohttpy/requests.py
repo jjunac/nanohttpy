@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Dict, List, Optional
 
 from nanohttpy.http import URL, HTTPHeaders, fast_parse_request_path, parse_query_string
 
@@ -12,8 +12,8 @@ class Request:  # pylint: disable=too-many-instance-attributes
     headers: HTTPHeaders
     body: bytes
     url: URL = field(init=False)
-    args: dict[str, list[str]] = field(init=False)  # The parsed URL params, compatibility with Flask
-    path_parameters: dict[str, str] = field(init=False)
+    args: Dict[str, List[str]] = field(init=False)  # The parsed URL params, compatibility with Flask
+    path_parameters: Dict[str, str] = field(init=False)
 
     def __post_init__(self):
         self.url = fast_parse_request_path(self.full_path)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from operator import xor
 import re
-from typing import Generator, Optional
+from typing import Dict, Generator, Optional
 
 from nanohttpy.exceptions import MethodNotAllowedError, NanoHttpyError, NotFoundError
 from nanohttpy.logging import logger
@@ -12,11 +12,11 @@ from nanohttpy.types import DecoratedHandlerFunc
 @dataclass
 class RouteTree:
     path_param: Optional[str] = None
-    _method_handlers: dict[str, DecoratedHandlerFunc] = field(default_factory=dict)
-    _children: dict[str, "RouteTree"] = field(default_factory=dict)
+    _method_handlers: Dict[str, DecoratedHandlerFunc] = field(default_factory=dict)
+    _children: Dict[str, "RouteTree"] = field(default_factory=dict)
     _wild_child: Optional["RouteTree"] = None
 
-    def get_child(self, path: str, params: dict[str, str]) -> Optional["RouteTree"]:
+    def get_child(self, path: str, params: Dict[str, str]) -> Optional["RouteTree"]:
         res = self._children.get(path, None)
         # If we didn't find a specialized URL, we check if there is a wildcard
         if (
@@ -62,13 +62,18 @@ def tokenize_path(path: str) -> Generator[str, None, None]:
 
 def check_param(path_comp) -> bool:
     """
-    Check if a path component is a parameter. Throws if path_comp contains { or } in the middle or the string, or only opening/closing
+    Check if a path component is a parameter. Throws if path_comp contains '{', '}', '<', '>'
+    in the middle or the string, or only opening/closing
     """
-    if m := re.search(r"[{}]", path_comp[1:-1]):
+    m = re.search(r"[{}<>]", path_comp[1:-1])
+    if m:
         raise NanoHttpyError(f"Unexpected {m.group(0)}")
     if xor(path_comp[0] == "{", path_comp[-1] == "}"):
         raise NanoHttpyError("Unbalanced { } found")
-    return path_comp[0] == "{"
+    if xor(path_comp[0] == "<", path_comp[-1] == ">"):
+        raise NanoHttpyError("Unbalanced < > found")
+    return path_comp[0] in ("{", "<")
+
 
 class Router:
     _route_tree: RouteTree

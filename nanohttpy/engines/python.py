@@ -1,5 +1,5 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import cast
+from typing import Tuple, cast
 
 from nanohttpy.http import HTTP_METHODS, HTTPHeaders
 from nanohttpy.applications import NanoHttpy
@@ -52,7 +52,7 @@ _init()
 class PythonEngine(HTTPServer):
     app: NanoHttpy
 
-    def __init__(self, server_address: tuple[str, int], app: NanoHttpy) -> None:
+    def __init__(self, server_address: Tuple[str, int], app: NanoHttpy) -> None:
         HTTPServer.__init__(self, server_address, _PythonEngineHandler)
         self.app = app
 

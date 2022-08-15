@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from http.client import HTTPMessage
 import re
+from typing import Dict, List
 from urllib.parse import parse_qs
 
 
@@ -42,5 +43,5 @@ def fast_parse_request_path(url: str) -> URL:
     )
 
 
-def parse_query_string(query_string: str) -> dict[str, list[str]]:
+def parse_query_string(query_string: str) -> Dict[str, List[str]]:
     return parse_qs(query_string)

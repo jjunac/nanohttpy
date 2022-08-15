@@ -2,7 +2,7 @@ import functools
 from inspect import Parameter, signature
 import logging
 import traceback
-from typing import Any, Callable
+from typing import Any, Callable, List
 from nanohttpy.exceptions import HttpError
 from nanohttpy.requests import Request
 from nanohttpy.responses import Response, adapt_response
@@ -23,55 +23,47 @@ class NanoHttpy:
 
         self._router = Router()
 
-    def _generate_handler_decorator(
-        self, http_method: str, path: str
+    def route(
+        self, path: str, methods: List[str] = None
     ) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        def handler(func: HandlerFunc) -> DecoratedHandlerFunc:
-            @functools.wraps(func)
-            def handler_wrapper(req: Request) -> HandlerFunc:
-                args: list[Any] = []
-                sig = signature(func)
-                expected_params = [p for p in sig.parameters.values() if p.kind == Parameter.POSITIONAL_OR_KEYWORD]
-                if len(expected_params) > 0:
-                    # The first arg is always the request
-                    args.append(req)
-                    # For the rest, we test first the path_param, then the query args
-                    for arg in expected_params[1:]:
-                        v = req.param(arg.name)
-                        if v is None:
-                            v = req.query(arg.name)
-                        args.append(v)
-                logger.debug("Calling handler with args %s", args)
-                return func(*args)
-
-            self._router.add_route(http_method, path, handler_wrapper)
-            return handler_wrapper
-
-        return handler
+        """
+        Flask-style decorator to bind a function to an URL.
+        By default, just listens to GET, use ``methods=[...]`` to handle other methods.
+        """
+        # TODO: Flask binds HEAD and OPTIONS as well automatically, we need to see how to handle these correctly...
+        return self._generate_handler_decorator(methods or ["GET"], path)
 
     def get(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        return self._generate_handler_decorator("GET", path)
+        """FastAPI-style decorator to bind a function to a GET request"""
+        return self._generate_handler_decorator(["GET"], path)
 
     def head(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        return self._generate_handler_decorator("HEAD", path)
+        """FastAPI-style decorator to bind a function to a HEAD request"""
+        return self._generate_handler_decorator(["HEAD"], path)
 
     def post(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        return self._generate_handler_decorator("POST", path)
+        """FastAPI-style decorator to bind a function to a POST request"""
+        return self._generate_handler_decorator(["POST"], path)
 
     def put(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        return self._generate_handler_decorator("PUT", path)
+        """FastAPI-style decorator to bind a function to a PUT request"""
+        return self._generate_handler_decorator(["PUT"], path)
 
     def delete(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        return self._generate_handler_decorator("DELETE", path)
+        """FastAPI-style decorator to bind a function to a DELETE request"""
+        return self._generate_handler_decorator(["DELETE"], path)
 
     def connect(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        return self._generate_handler_decorator("CONNECT", path)
+        """FastAPI-style decorator to bind a function to a CONNECT request"""
+        return self._generate_handler_decorator(["CONNECT"], path)
 
     def options(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        return self._generate_handler_decorator("OPTIONS", path)
+        """FastAPI-style decorator to bind a function to a OPTIONS request"""
+        return self._generate_handler_decorator(["OPTIONS"], path)
 
     def trace(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
-        return self._generate_handler_decorator("TRACE", path)
+        """FastAPI-style decorator to bind a function to a TRACE request"""
+        return self._generate_handler_decorator(["TRACE"], path)
 
     def lookup(self, req: Request) -> HandlerFunc:
         handler = self._router.get_handler(req)
@@ -107,3 +99,35 @@ class NanoHttpy:
 
         logger.info("Running on http://127.0.0.1:%d (Press CTRL+C to quit)", port)
         engine.serve_forever()
+
+    def _generate_handler_decorator(
+        self, http_methods: List[str], path: str
+    ) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
+        def handler(func: HandlerFunc) -> DecoratedHandlerFunc:
+            @functools.wraps(func)
+            def handler_wrapper(req: Request) -> HandlerFunc:
+                args: List[Any] = []
+                sig = signature(func)
+                expected_params = [
+                    p
+                    for p in sig.parameters.values()
+                    if p.kind == Parameter.POSITIONAL_OR_KEYWORD
+                ]
+                if len(expected_params) > 0:
+                    # The first arg is always the request
+                    args.append(req)
+                    # For the rest, we test first the path_param, then the query args
+                    for arg in expected_params[1:]:
+                        v = req.param(arg.name)
+                        if v is None:
+                            v = req.query(arg.name)
+                        args.append(v)
+                logger.debug("Calling handler with args %s", args)
+                return func(*args)
+
+            for method in http_methods:
+                self._router.add_route(method, path, handler_wrapper)
+
+            return handler_wrapper
+
+        return handler

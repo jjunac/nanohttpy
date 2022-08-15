@@ -1,0 +1,6 @@
+benchmarks:
+  - name: nanohttpy
+    command: ["python3", "app.py"]
+    port: 5000
+    env:
+      - "PYTHONPATH=../.."  # We do that to test the development version

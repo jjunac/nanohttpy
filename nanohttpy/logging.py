@@ -11,5 +11,3 @@ __logger_formatter = logging.Formatter(
 )
 for h in logger.handlers:
     h.setFormatter(__logger_formatter)
-
-print("Coucou")

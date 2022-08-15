@@ -32,12 +32,24 @@ def test_tokenize_path(input_path, expected):
 def test_check_param():
     #  FastAPI-like path parameters
     assert check_param("{param}")
+    assert check_param("<param>")
     assert not check_param("param")
+
     assert_raises(NanoHttpyError, lambda: check_param("{param"))
     assert_raises(NanoHttpyError, lambda: check_param("param}"))
     assert_raises(NanoHttpyError, lambda: check_param("par{am"))
     assert_raises(NanoHttpyError, lambda: check_param("pa}ram"))
     assert_raises(NanoHttpyError, lambda: check_param("{{param}"))
+
+    assert_raises(NanoHttpyError, lambda: check_param("<param"))
+    assert_raises(NanoHttpyError, lambda: check_param("param>"))
+    assert_raises(NanoHttpyError, lambda: check_param("par<am"))
+    assert_raises(NanoHttpyError, lambda: check_param("pa>ram"))
+    assert_raises(NanoHttpyError, lambda: check_param("<<param>"))
+
+    assert_raises(NanoHttpyError, lambda: check_param("{par<am}"))
+    assert_raises(NanoHttpyError, lambda: check_param("<par{am>"))
+    assert_raises(NanoHttpyError, lambda: check_param("<param}"))
 
 
 def test_RouteTree():
@@ -183,20 +195,28 @@ def test_Router():
     def param1_param2():
         pass
 
-    assert_raises(MethodNotAllowedError, lambda: r.get_handler(make_request("GET", "/")))
+    assert_raises(
+        MethodNotAllowedError, lambda: r.get_handler(make_request("GET", "/"))
+    )
     assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/a")))
-    assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever")))
+    assert_raises(
+        NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever"))
+    )
 
     r.add_route("GET", "/", root)
 
     assert r.get_handler(make_request("GET", "/")) is not None
     assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/a")))
-    assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever")))
+    assert_raises(
+        NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever"))
+    )
 
     r.add_route("GET", "/a", a)
 
     assert r.get_handler(make_request("GET", "/a")) is not None
-    assert_raises(NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever")))
+    assert_raises(
+        NotFoundError, lambda: r.get_handler(make_request("GET", "/whatever"))
+    )
 
     r.add_route("GET", "/{param1}", param1)
 
