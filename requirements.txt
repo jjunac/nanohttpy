@@ -1,2 +1,11 @@
+# Mandatory dependencies
+# None
+
+# Development dependencies
 pytest
 pytest-cov
+
+# Optional dependencies
+aiohttp
+asyncio
+httptools
