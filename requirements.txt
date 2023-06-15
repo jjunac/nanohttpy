@@ -4,8 +4,10 @@
 # Development dependencies
 pytest
 pytest-cov
+memray
 
 # Optional dependencies
 aiohttp
 asyncio
 httptools
+uvloop

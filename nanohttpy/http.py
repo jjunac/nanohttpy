@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from http.client import HTTPMessage
 import re
 from typing import Dict, List
 from urllib.parse import parse_qs
@@ -7,7 +6,7 @@ from urllib.parse import parse_qs
 
 HTTP_METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"]
 
-HTTPHeaders = HTTPMessage
+HTTPHeaders = Dict[str, str]
 
 @dataclass
 class URL:

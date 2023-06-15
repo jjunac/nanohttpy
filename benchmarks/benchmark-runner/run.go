@@ -85,8 +85,8 @@ func main() {
 		log.Printf("Config loaded: %+v", cfg)
 
 		bench := NewHttpBench(&cfg, []HttpBenchStage{
-			{"Warmup", 2, 15 * time.Second, false},
-			{"Load test", 8, 15 * time.Second, true},
+			{"Warmup", 8, 10 * time.Second, false},
+			{"Load test", 8, 10 * time.Second, true},
 		})
 		res, ok := bench.Run(ApiHello())
 

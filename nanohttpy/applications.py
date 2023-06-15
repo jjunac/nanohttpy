@@ -24,14 +24,14 @@ class NanoHttpy:
         self._router = Router()
 
     def route(
-        self, path: str, methods: List[str] = None
+        self, path: str, methods: List[str] = ["GET"]
     ) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         """
         Flask-style decorator to bind a function to an URL.
         By default, just listens to GET, use ``methods=[...]`` to handle other methods.
         """
         # TODO: Flask binds HEAD and OPTIONS as well automatically, we need to see how to handle these correctly...
-        return self._generate_handler_decorator(methods or ["GET"], path)
+        return self._generate_handler_decorator(methods, path)
 
     def get(self, path: str) -> Callable[[HandlerFunc], DecoratedHandlerFunc]:
         """FastAPI-style decorator to bind a function to a GET request"""
@@ -81,21 +81,21 @@ class NanoHttpy:
             logger.error("%s\n%s", e, traceback.format_exc())
             return Response(status_code=500)
 
-    def run(self, port=5000):
-        # We import inside the method to limit the import overhead when the user uses a custom engine
-        # And btw it gets rid of the cyclic dep between the PythonEngine and this class
-        from nanohttpy.engines.python import (  # pylint: disable=import-outside-toplevel
-            PythonEngine,
-        )
-
-        engine_class = PythonEngine
+    def run(self, port=5000, engine=None):
+        if engine is None:
+            # We import inside the method to limit the import overhead when the user uses a custom engine
+            # And btw it gets rid of the cyclic dep between the PythonEngine and this class
+            from nanohttpy.engines.python import (  # pylint: disable=import-outside-toplevel
+                PythonEngine,
+            )
+            engine = PythonEngine
 
         logger.info(
             "Creating an Engine instance of type <%s.%s>",
-            engine_class.__module__,
-            engine_class.__name__,
+            engine.__module__,
+            engine.__name__,
         )
-        engine = engine_class(("", port), self)
+        engine = engine(("", port), self)
 
         logger.info("Running on http://127.0.0.1:%d (Press CTRL+C to quit)", port)
         engine.serve_forever()

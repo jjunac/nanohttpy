@@ -1,6 +1,11 @@
 benchmarks:
-  - name: nanohttpy
-    command: ["python3", "app.py"]
+  - name: nanohttpy-python
+    command: ["python3", "app.py", "--python"]
+    port: 5000
+    env:
+      - "PYTHONPATH=../.."  # We do that to test the development version
+  - name: nanohttpy-uvloop
+    command: ["python3", "app.py", "--uvloop"]
     port: 5000
     env:
       - "PYTHONPATH=../.."  # We do that to test the development version

@@ -5,11 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Pytest",
+            "name": "Basic example",
             "type": "python",
             "request": "launch",
-            "module": "pytest",
+            "program": "${workspaceFolder}/exemples/basic_exemple.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": ".",
+            },
             "justMyCode": true
-        }
+        },
     ]
 }

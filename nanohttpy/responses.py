@@ -1,3 +1,4 @@
+from http import HTTPStatus
 import json
 from typing import Any, Dict, Optional, Type
 from nanohttpy.exceptions import NanoHttpyError
@@ -105,6 +106,10 @@ class Response:
                 for k, v in self.headers.items()
             }
         return self._encoded_headers
+
+    @property
+    def status_reason(self) -> str:
+        return HTTPStatus(self.status_code).phrase
 
     def render(self, content: Any) -> bytes:
         if content is None:

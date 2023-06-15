@@ -1,6 +1,9 @@
+# Environment
+PY := python3
+GO := GO111MODULE=on go
+
 #  Disable implicit rules
 MAKEFLAGS += rR
-
 
 ## General:
 
@@ -20,15 +23,15 @@ endef
 
 .PHONY: install
 install: ## Install all the dependencies needed for the benchmarks
-	python3 -m pip install -r requirements.txt
+	$(PY) -m pip install -r requirements.txt
 
 .PHONY: run
 run: ## Run all the benchmarks
-	go run benchmark-runner
+	$(GO) run benchmark-runner
 
 %:: .FORCE ## Run the specified benchmark
 	$(call check_sys)
-	go run benchmark-runner $@
+	$(GO) run benchmark-runner $@
 	$(call check_sys)
 
 

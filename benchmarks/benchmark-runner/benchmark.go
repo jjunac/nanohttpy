@@ -62,8 +62,8 @@ func (b *HttpBench) startServer() {
 	b.cmd = exec.Command(b.Cfg.Command[0], b.Cfg.Command[1:]...)
 	b.cmd.Dir = b.Cfg.Dir
 	b.cmd.Env = append(b.cmd.Env, b.Cfg.Env...)
-	// b.cmd.Stdout = os.Stdout
-	// b.cmd.Stderr = os.Stderr
+	b.cmd.Stdout = &strings.Builder{}
+	b.cmd.Stderr = &strings.Builder{}
 	b.cmd.Start()
 }
 
@@ -155,8 +155,10 @@ func (b *HttpBench) Run(testCase *TestCase) (results []HttpBenchResult, ok bool)
 		for {
 			select {
 			case <-timeout:
-				// TODO: print output
-				log.Println("The server is taking too long to start")
+				b.cmd.Process.Kill()
+				log.Printf("The server is taking too long to start !!!\n--- Stdout:\n%s\n--- Stderr:\n%s",
+						b.cmd.Stdout.(*strings.Builder).String(),
+						b.cmd.Stderr.(*strings.Builder).String())
 				return false
 			case <-tick:
 

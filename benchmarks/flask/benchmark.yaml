@@ -3,7 +3,7 @@ benchmarks:
     command: ["python3", "app.py"]
     port: 5000
   - name: flask-gunicorn
-    command: ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5000", "app:app"]
+    command: ["python3", "-m", "gunicorn", "--workers", "4", "--bind", "0.0.0.0:5000", "app:app"]
     port: 5000
   - name: flask-gevent
     command: ["python3", "pywsgi.py"]
